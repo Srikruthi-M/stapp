@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ${APP_NAME}-deployment   # Example: stapp-deployment
+  name: stapp-deployment
 spec:
-  replicas: ${REPLICA_COUNT}     # Example: 2
+  replicas: 2
   selector:
     matchLabels:
-      app: ${APP_NAME}
+      app: stapp
   template:
     metadata:
       labels:
-        app: ${APP_NAME}
+        app: stapp
     spec:
       containers:
-        - name: ${APP_NAME}-container
-          image: ${IMAGE_NAME}:${IMAGE_TAG}   # Example: stapp-image:10
-          imagePullPolicy: IfNotPresent
+        - name: stapp-container
+          image: kruthim/stapp:latest
+          imagePullPolicy: Always
           ports:
-            - containerPort: ${APP_PORT}      # Example: 8100
+            - containerPort: 8100

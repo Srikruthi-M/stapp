@@ -2,13 +2,9 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME      = "stapp"
-        IMAGE_NAME    = "kruthim/stapp"
-        IMAGE_TAG     = "${BUILD_NUMBER}"
-        APP_PORT      = "8100"
-        NODE_PORT     = "30082"
-        REPLICA_COUNT = "2"
-        KUBECONFIG    = "c:\\users\\test\\.kube\\config"
+        IMAGE_NAME = "kruthim/stapp"
+        IMAGE_TAG  = "${BUILD_NUMBER}"          // every pipeline run creates new version
+        KUBECONFIG = "c:\\users\\test\\.kube\\config"
     }
 
     stages {
@@ -28,9 +24,9 @@ pipeline {
         stage('Push Image to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
                 )]) {
                     bat "docker login -u %DOCKER_USER% -p %DOCKER_PASS%"
                     bat "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
@@ -40,14 +36,16 @@ pipeline {
             }
         }
 
-        stage('Update Kubernetes Deployment') {
+        stage('Deploy to Kubernetes') {
             steps {
                 script {
                     withEnv(["KUBECONFIG=${KUBECONFIG}"]) {
-                        bat "envsubst < deployment.yaml > deployment-final.yaml"
-                        bat "envsubst < service.yaml > service-final.yaml"
-                        bat "kubectl apply -f deployment-final.yaml"
-                        bat "kubectl apply -f service-final.yaml"
+                        // Apply YAML only once (they always reference :latest)
+                        bat "kubectl apply -f deployment.yaml"
+                        bat "kubectl apply -f service.yaml"
+
+                        // Force pods to pull new :latest image
+                        bat "kubectl rollout restart deployment stapp-deployment"
                     }
                 }
             }
@@ -56,7 +54,7 @@ pipeline {
 
     post {
         success {
-            echo "🚀 CI/CD Completed Successfully — Docker image pushed & Kubernetes updated!"
+            echo "🚀 CI/CD Success — Docker image pushed & Kubernetes updated!"
         }
         failure {
             echo "❌ Pipeline Failed — Check logs"
