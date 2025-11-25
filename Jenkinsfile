@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "kruthim/stapp"
         IMAGE_TAG  = "${BUILD_NUMBER}"          // every pipeline run creates new version
-        KUBECONFIG = "c:\\users\\test\\.kube\\config"
+        KUBECONFIG = "C:\\ProgramData\\Jenkins\\.kube\\config"
     }
 
     stages {
